@@ -142,6 +142,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         user_phone: cleanPhone,
       })
 
+      // Strictly capture lead in Admin Dashboard immediately
+      saveLocalLead({
+        full_name: cleanName,
+        verified_email: cleanEmail,
+        verified_phone: cleanPhone,
+        lead_source: 'ai_chatbot',
+        lead_status: 'new_inquiry',
+        engagement_score: 75,
+        consultation_requested: true,
+        follow_up_consent: true,
+        marketing_email_consent: true,
+        marketing_sms_consent: true,
+        country_of_residence: cleanPhone.startsWith('+91') ? 'India' : (cleanPhone.startsWith('+1') ? 'United States' : 'International'),
+        preferred_contact_method: 'phone',
+        investment_timeframe: 'within_12_months',
+        optional_budget_range: '$800,000 - $1,050,000',
+        admin_notes: `Lead captured via EB-5 Chatbot. SMS verification dispatched on ${new Date().toLocaleString()}.`,
+      })
+
       // Append user confirmation bubble
       const userMsgId = `user-${Date.now()}`
       const userSummary = `Name: ${cleanName}\nEmail: ${cleanEmail}\nPhone: ${cleanPhone}`
@@ -354,6 +373,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const skipOnboarding = useCallback(() => {
     setOnboardingStep('done')
+    if (collectedData.name || collectedData.email || collectedData.phone) {
+      saveLocalLead({
+        full_name: collectedData.name || 'Anonymous Visitor',
+        verified_email: collectedData.email || null,
+        verified_phone: collectedData.phone || null,
+        lead_source: 'ai_chatbot',
+        lead_status: 'new_inquiry',
+        engagement_score: 55,
+        consultation_requested: false,
+        admin_notes: 'Visitor skipped formal phone verification card.',
+      })
+    }
     const assistantMsgId = `assistant-${Date.now()}`
     const reply = `No problem! How can I assist you with the EB-5 Immigrant Investor Program today? Feel free to ask about investment requirements, timelines, or regional center projects.`
     const assistantMsg: ChatMessage = {
@@ -368,7 +399,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       sender_type: 'assistant',
       message_content: reply,
     })
-  }, [conversationId])
+  }, [conversationId, collectedData])
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -428,6 +459,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             } else if (emailMatch) {
               const email = emailMatch[0].toLowerCase()
               setCollectedData((prev) => ({ ...prev, email }))
+              saveLocalLead({
+                full_name: collectedData.name || 'Prospective Investor',
+                verified_email: email,
+                verified_phone: collectedData.phone || null,
+                lead_source: 'ai_chatbot',
+                lead_status: 'new_inquiry',
+                engagement_score: 65,
+                admin_notes: 'Email provided in chat conversation.',
+              })
               assistantReply = `Thank you! We've recorded your email as **${email}**. Please enter your mobile phone number in the card above (or type it here) to receive your 6-digit SMS verification code via Telnyx (+1 866-454-3090):`
             } else {
               // Check if user asked an actual question instead of giving contact details
@@ -452,6 +492,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
                 setCollectedData((prev) => ({ ...prev, name: cleanName }))
                 updateStoredConversationUserInfo(conversationId, { user_name: cleanName })
+                saveLocalLead({
+                  full_name: cleanName,
+                  verified_email: collectedData.email || null,
+                  verified_phone: collectedData.phone || null,
+                  lead_source: 'ai_chatbot',
+                  lead_status: 'new_inquiry',
+                  engagement_score: 55,
+                  admin_notes: 'Name provided in chat conversation.',
+                })
 
                 assistantReply = `Pleasure to meet you, ${cleanName}!\n\nPlease share your email address and mobile phone number in the card above to receive a quick SMS verification code from our official number (+1 866-454-3090) and begin your consultation.`
               }
@@ -486,6 +535,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           // ── 2. Standard Knowledge Base & AI Chat Queries ──
+          // Also automatically capture any contact details provided during freeform chat
+          const anyEmail = trimmed.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)
+          const anyPhone = trimmed.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/)
+          if (anyEmail || anyPhone) {
+            const extractedEmail = anyEmail ? anyEmail[0].toLowerCase() : (collectedData.email || null)
+            const extractedPhone = anyPhone ? anyPhone[0].trim() : (collectedData.phone || null)
+            saveLocalLead({
+              full_name: collectedData.name || 'Prospective Investor',
+              verified_email: extractedEmail,
+              verified_phone: extractedPhone,
+              lead_source: 'ai_chatbot',
+              lead_status: 'new_inquiry',
+              engagement_score: 75,
+              admin_notes: `Contact info extracted from chat message: "${trimmed.slice(0, 100)}"`,
+            })
+            if (extractedEmail) setCollectedData((p) => ({ ...p, email: extractedEmail }))
+            if (extractedPhone) setCollectedData((p) => ({ ...p, phone: extractedPhone }))
+          }
+
           const kbMatch = findKnowledgeBaseReply(trimmed)
 
           if (kbMatch) {

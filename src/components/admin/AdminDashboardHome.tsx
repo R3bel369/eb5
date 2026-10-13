@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Users, MessageSquare, Clock, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { formatDateTime, statusLabel, statusVariant, syncStatusVariant } from '../../lib/utils'
-import { getLocalLeads } from '../../lib/leadStorage'
+import { getLocalLeads, fetchRemoteLeads } from '../../lib/leadStorage'
 import type { Lead, SpreadsheetSyncJob } from '../../types/database'
 import { Link } from 'react-router-dom'
 
@@ -46,6 +46,16 @@ export function AdminDashboardHome() {
       const remoteLeads = (leads ?? []) as Lead[]
       const allLeads = [...remoteLeads]
 
+      // Merge serverless /api/leads
+      try {
+        const apiLeads = await fetchRemoteLeads()
+        for (const al of apiLeads) {
+          if (!allLeads.some(l => l.id === al.id || (l.verified_email && l.verified_email === al.verified_email))) {
+            allLeads.push(al)
+          }
+        }
+      } catch {}
+
       for (const loc of localLeads) {
         if (!allLeads.some(l => l.id === loc.id || (l.verified_email && l.verified_email === loc.verified_email))) {
           allLeads.push(loc)
@@ -69,7 +79,22 @@ export function AdminDashboardHome() {
       setIntegrations((integs ?? []) as unknown as { provider: string; configuration_status: string }[])
       setLoading(false)
     }
+
     load()
+
+    const handleUpdate = () => { load() }
+    window.addEventListener('shoora_leads_update', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    window.addEventListener('focus', handleUpdate)
+
+    const interval = setInterval(load, 4000)
+
+    return () => {
+      window.removeEventListener('shoora_leads_update', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+      window.removeEventListener('focus', handleUpdate)
+      clearInterval(interval)
+    }
   }, [])
 
   const statCards = [

@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase'
 import {
   formatDateTime, statusLabel, statusVariant, scoreColor, syncStatusVariant
 } from '../../lib/utils'
-import { getLocalLeads, updateLocalLead } from '../../lib/leadStorage'
+import { getLocalLeads, updateLocalLead, fetchRemoteLeads } from '../../lib/leadStorage'
 import type { Lead, LeadStatus, SpreadsheetSyncJob } from '../../types/database'
 import toast from 'react-hot-toast'
 import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom'
@@ -30,7 +30,6 @@ function LeadList() {
   const PER_PAGE = 20
 
   const loadLeads = useCallback(async () => {
-    setLoading(true)
     let combinedLeads: Lead[] = []
 
     // 1. Fetch from Supabase (if available)
@@ -47,7 +46,17 @@ function LeadList() {
       console.warn('Supabase leads load note:', err)
     }
 
-    // 2. Merge with local storage leads
+    // 2. Fetch from Serverless /api/leads
+    try {
+      const remoteLeads = await fetchRemoteLeads()
+      for (const remote of remoteLeads) {
+        if (!combinedLeads.some(l => l.id === remote.id || (l.verified_email && l.verified_email === remote.verified_email))) {
+          combinedLeads.push(remote)
+        }
+      }
+    } catch {}
+
+    // 3. Merge with local storage leads
     const localLeads = getLocalLeads()
     for (const local of localLeads) {
       if (!combinedLeads.some(l => l.id === local.id || (l.verified_email && l.verified_email === local.verified_email))) {
@@ -55,7 +64,7 @@ function LeadList() {
       }
     }
 
-    // 3. Filter by search
+    // 4. Filter by search
     if (search.trim()) {
       const q = search.toLowerCase().trim()
       combinedLeads = combinedLeads.filter(l =>
@@ -66,7 +75,7 @@ function LeadList() {
       )
     }
 
-    // 4. Filter by status
+    // 5. Filter by status
     if (statusFilter) {
       combinedLeads = combinedLeads.filter(l => l.lead_status === statusFilter)
     }
@@ -78,7 +87,27 @@ function LeadList() {
     setLoading(false)
   }, [search, statusFilter])
 
-  useEffect(() => { loadLeads() }, [loadLeads])
+  useEffect(() => {
+    loadLeads()
+
+    const handleUpdate = () => {
+      loadLeads()
+    }
+
+    window.addEventListener('shoora_leads_update', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    window.addEventListener('focus', handleUpdate)
+
+    // Polling interval to auto-fetch leads every 4 seconds
+    const interval = setInterval(loadLeads, 4000)
+
+    return () => {
+      window.removeEventListener('shoora_leads_update', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+      window.removeEventListener('focus', handleUpdate)
+      clearInterval(interval)
+    }
+  }, [loadLeads])
 
   // Close export menu on outside click
   useEffect(() => {
