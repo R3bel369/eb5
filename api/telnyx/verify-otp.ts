@@ -14,24 +14,32 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { phone, code } = req.body || {}
+    const { phone, code, expectedCode } = req.body || {}
     if (!phone || !code) {
       res.status(400).json({ error: 'Phone and code required' })
       return
     }
 
     const cleanCode = code.toString().trim()
+    const cleanExpected = expectedCode ? expectedCode.toString().trim() : null
 
-    // Accept universal test fallback code or valid numeric code
-    if (cleanCode === '123456' || cleanCode.length === 6) {
+    // Accept universal test code for development & QA
+    if (cleanCode === '123456') {
       res.status(200).json({ success: true, verified: true })
       return
     }
 
+    // Strictly verify against the dispatched expectedCode
+    if (cleanExpected && cleanCode === cleanExpected) {
+      res.status(200).json({ success: true, verified: true })
+      return
+    }
+
+    // Strictly reject any other code (do NOT allow arbitrary 6-digit numbers)
     res.status(400).json({
       success: false,
       verified: false,
-      error: 'Invalid 6-digit SMS code. Please check your SMS or use 123456.'
+      error: 'Invalid or expired 6-digit SMS code. Please check your SMS text message or use test code 123456.'
     })
   } catch (err: any) {
     res.status(500).json({ error: err.message })

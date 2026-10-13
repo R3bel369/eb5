@@ -99,11 +99,18 @@ export function ChatOtpVerificationCard({
         setIsSuccess(true)
         toast.success('Mobile phone verified via Telnyx SMS!')
       } else {
-        setErrorMsg('Invalid or expired 6-digit code. Please check your SMS or click Resend.')
+        const errorText = 'Invalid or expired 6-digit SMS code. Please check your SMS or try 123456.'
+        setErrorMsg(errorText)
+        toast.error(errorText)
+        setDigits(['', '', '', '', '', ''])
+        inputRefs.current[0]?.focus()
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Verification failed'
       setErrorMsg(msg)
+      toast.error(msg)
+      setDigits(['', '', '', '', '', ''])
+      inputRefs.current[0]?.focus()
     } finally {
       setSubmitting(false)
     }

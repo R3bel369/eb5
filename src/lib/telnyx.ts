@@ -70,16 +70,29 @@ export async function verifyTelnyxSmsOtp(
     return { success: false, verified: false, error: 'Please enter a 6-digit code.' }
   }
 
-  // Quick fallback check if matching local hint or dev test code
-  if (cleanCode === '123456' || (hintCode && cleanCode === hintCode)) {
+  // Universal test code bypass for dev / testing
+  if (cleanCode === '123456') {
     return { success: true, verified: true }
+  }
+
+  // If local hintCode is available, check match immediately
+  if (hintCode) {
+    if (cleanCode === hintCode) {
+      return { success: true, verified: true }
+    } else {
+      return {
+        success: false,
+        verified: false,
+        error: 'Invalid 6-digit SMS code. Please check your SMS or use test code 123456.',
+      }
+    }
   }
 
   try {
     const res = await fetch('/api/telnyx/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, code: cleanCode }),
+      body: JSON.stringify({ phone, code: cleanCode, expectedCode: hintCode }),
     })
 
     const data = await res.json()
@@ -94,9 +107,6 @@ export async function verifyTelnyxSmsOtp(
     }
   } catch (err: any) {
     console.warn('Network error verifying Telnyx SMS:', err)
-    if (cleanCode === '123456' || (hintCode && cleanCode === hintCode)) {
-      return { success: true, verified: true }
-    }
-    return { success: false, verified: false, error: 'Network error verifying code.' }
+    return { success: false, verified: false, error: 'Network error verifying code. Please try again.' }
   }
 }

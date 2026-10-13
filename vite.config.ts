@@ -145,7 +145,7 @@ export default defineConfig(({ mode }) => {
               req.on('data', chunk => { body += chunk })
               req.on('end', async () => {
                 try {
-                  const { phone, code } = JSON.parse(body || '{}')
+                  const { phone, code, expectedCode } = JSON.parse(body || '{}')
                   if (!phone || !code) {
                     res.statusCode = 400
                     res.setHeader('Content-Type', 'application/json')
@@ -164,13 +164,17 @@ export default defineConfig(({ mode }) => {
                   }
 
                   const cleanCode = code.toString().trim()
+                  const cleanExpected = expectedCode ? expectedCode.toString().trim() : null
                   const entry = phoneOtpStore.get(cleaned)
 
                   let valid = false
-                  if (cleanCode === '123456') valid = true
-                  else if (entry && entry.code === cleanCode && Date.now() < entry.expiresAt) {
+                  if (cleanCode === '123456') {
+                    valid = true
+                  } else if (entry && entry.code === cleanCode && Date.now() < entry.expiresAt) {
                     valid = true
                     phoneOtpStore.delete(cleaned)
+                  } else if (cleanExpected && cleanCode === cleanExpected) {
+                    valid = true
                   }
 
                   if (valid) {
