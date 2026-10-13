@@ -50,7 +50,7 @@ function LeadList() {
     try {
       const remoteLeads = await fetchRemoteLeads()
       for (const remote of remoteLeads) {
-        if (!combinedLeads.some(l => l.id === remote.id || (l.verified_email && l.verified_email === remote.verified_email))) {
+        if (!combinedLeads.some(l => l.id === remote.id)) {
           combinedLeads.push(remote)
         }
       }
@@ -59,7 +59,7 @@ function LeadList() {
     // 3. Merge with local storage leads
     const localLeads = getLocalLeads()
     for (const local of localLeads) {
-      if (!combinedLeads.some(l => l.id === local.id || (l.verified_email && l.verified_email === local.verified_email))) {
+      if (!combinedLeads.some(l => l.id === local.id)) {
         combinedLeads.push(local)
       }
     }

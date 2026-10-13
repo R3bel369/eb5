@@ -50,14 +50,14 @@ export function AdminDashboardHome() {
       try {
         const apiLeads = await fetchRemoteLeads()
         for (const al of apiLeads) {
-          if (!allLeads.some(l => l.id === al.id || (l.verified_email && l.verified_email === al.verified_email))) {
+          if (!allLeads.some(l => l.id === al.id)) {
             allLeads.push(al)
           }
         }
       } catch {}
 
       for (const loc of localLeads) {
-        if (!allLeads.some(l => l.id === loc.id || (l.verified_email && l.verified_email === loc.verified_email))) {
+        if (!allLeads.some(l => l.id === loc.id)) {
           allLeads.push(loc)
         }
       }

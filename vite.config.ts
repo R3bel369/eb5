@@ -231,11 +231,11 @@ export default defineConfig(({ mode }) => {
                 try {
                   const leadData = JSON.parse(body || '{}')
                   const now = new Date().toISOString()
-                  const key = leadData.verified_email || leadData.verified_phone || leadData.id || `lead-${Date.now()}`
-                  const existing = localLeadStore.get(key)
+                  const leadId = leadData.id || `lead-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+                  const existing = localLeadStore.get(leadId)
 
                   const finalLead = {
-                    id: leadData.id || existing?.id || `lead-${Date.now()}`,
+                    id: leadId,
                     full_name: leadData.full_name || existing?.full_name || 'Prospective Investor',
                     verified_email: leadData.verified_email ?? existing?.verified_email ?? null,
                     verified_phone: leadData.verified_phone ?? existing?.verified_phone ?? null,
@@ -261,7 +261,7 @@ export default defineConfig(({ mode }) => {
                     last_interaction_at: now,
                   }
 
-                  localLeadStore.set(key, finalLead)
+                  localLeadStore.set(leadId, finalLead)
                   console.log(`[Leads API] Captured lead: ${finalLead.full_name} (${finalLead.verified_email || finalLead.verified_phone})`)
 
                   res.setHeader('Content-Type', 'application/json')

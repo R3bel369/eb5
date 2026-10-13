@@ -29,11 +29,11 @@ export default async function handler(req: any, res: any) {
       const leadData = typeof body === 'string' ? JSON.parse(body) : body
 
       const now = new Date().toISOString()
-      const key = leadData.verified_email || leadData.verified_phone || leadData.id || `lead-${Date.now()}`
+      const leadId = leadData.id || `lead-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 
-      const existing = serverLeadStore.get(key)
+      const existing = serverLeadStore.get(leadId)
       const finalLead = {
-        id: leadData.id || existing?.id || `lead-${Date.now()}`,
+        id: leadId,
         full_name: leadData.full_name || existing?.full_name || 'Prospective Investor',
         verified_email: leadData.verified_email ?? existing?.verified_email ?? null,
         verified_phone: leadData.verified_phone ?? existing?.verified_phone ?? null,
@@ -59,7 +59,7 @@ export default async function handler(req: any, res: any) {
         last_interaction_at: now,
       }
 
-      serverLeadStore.set(key, finalLead)
+      serverLeadStore.set(leadId, finalLead)
 
       // Optionally sync to Supabase if credentials exist
       const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL

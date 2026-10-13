@@ -143,15 +143,9 @@ export async function fetchRemoteLeads(): Promise<Lead[]> {
 
 export function saveLocalLead(leadData: Partial<Lead>): Lead {
   const current = getLocalLeads()
-  const targetEmail = leadData.verified_email?.trim().toLowerCase()
-  const targetPhoneDigits = cleanPhoneDigits(leadData.verified_phone)
 
-  const existingIdx = current.findIndex(l => {
-    if (leadData.id && l.id === leadData.id) return true
-    if (targetEmail && l.verified_email && l.verified_email.trim().toLowerCase() === targetEmail) return true
-    if (targetPhoneDigits && l.verified_phone && cleanPhoneDigits(l.verified_phone) === targetPhoneDigits) return true
-    return false
-  })
+  // Match ONLY by explicit unique ID so previous leads are NEVER overwritten
+  const existingIdx = leadData.id ? current.findIndex(l => l.id === leadData.id) : -1
 
   const now = new Date().toISOString()
   let finalLead: Lead

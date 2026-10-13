@@ -107,6 +107,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     otpHint: null,
   })
   const abortRef = useRef<AbortController | null>(null)
+  const currentLeadIdRef = useRef<string>(`lead-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`)
 
   // Initialize stored conversation on mount
   useEffect(() => {
@@ -142,8 +143,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         user_phone: cleanPhone,
       })
 
-      // Strictly capture lead in Admin Dashboard immediately
+      // Strictly capture lead in Admin Dashboard immediately with its own persistent unique ID
       saveLocalLead({
+        id: currentLeadIdRef.current,
         full_name: cleanName,
         verified_email: cleanEmail,
         verified_phone: cleanPhone,
@@ -247,6 +249,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       // 1. Save directly into Local Lead Storage for instant Admin Leads availability
       const savedLead = saveLocalLead({
+        id: currentLeadIdRef.current,
         full_name: userName,
         verified_email: targetEmail,
         verified_phone: targetPhone,
@@ -257,7 +260,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         follow_up_consent: true,
         marketing_email_consent: true,
         marketing_sms_consent: true,
-        country_of_residence: 'International',
+        country_of_residence: targetPhone.startsWith('+91') ? 'India' : (targetPhone.startsWith('+1') ? 'United States' : 'International'),
         preferred_contact_method: 'phone',
         investment_timeframe: 'within_12_months',
         optional_budget_range: '$800,000 - $1,050,000',
@@ -375,6 +378,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setOnboardingStep('done')
     if (collectedData.name || collectedData.email || collectedData.phone) {
       saveLocalLead({
+        id: currentLeadIdRef.current,
         full_name: collectedData.name || 'Anonymous Visitor',
         verified_email: collectedData.email || null,
         verified_phone: collectedData.phone || null,
@@ -631,6 +635,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const startNewConversation = useCallback(() => {
     const newConvId = `conv-${Date.now()}`
+    currentLeadIdRef.current = `lead-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
     setConversationId(newConvId)
     setCollectedData({})
     setOnboardingStep('ask_name')
