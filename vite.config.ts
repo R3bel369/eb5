@@ -89,7 +89,7 @@ export default defineConfig(({ mode }) => {
                     const payload: Record<string, any> = {
                       from: telnyxPhoneNumber,
                       to: cleaned,
-                      text: `Shoora EB-5: Your verification code is ${code}. Valid for 10 minutes.`
+                      text: `EB-5: Your verification code is ${code}. Valid for 10 minutes.`
                     }
                     // US carriers do not support alphanumeric sender IDs ("Shoora").
                     // For US numbers, send directly from the E.164 phone number.

@@ -56,7 +56,7 @@ export default async function handler(req: any, res: any) {
         const payload: Record<string, any> = {
           from: telnyxPhoneNumber,
           to: cleaned,
-          text: `Shoora EB-5: Your verification code is ${code}. Valid for 10 minutes.`
+          text: `EB-5: Your verification code is ${code}. Valid for 10 minutes.`
         }
         if (!isUS && telnyxMessagingProfileId) {
           payload.messaging_profile_id = telnyxMessagingProfileId
