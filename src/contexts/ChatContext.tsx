@@ -10,6 +10,7 @@ import {
 } from '../lib/conversationStorage'
 import { saveLocalLead } from '../lib/leadStorage'
 import { sendTelnyxSmsOtp, verifyTelnyxSmsOtp } from '../lib/telnyx'
+import toast from 'react-hot-toast'
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 
@@ -181,6 +182,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       // Dispatch real Telnyx SMS OTP
       const res = await sendTelnyxSmsOtp(cleanPhone, cleanName)
+      if (res.warning) {
+        toast.error(`Telnyx: ${res.warning}`, { duration: 6000 })
+      }
+
       setOtpState({
         phone: cleanPhone,
         email: cleanEmail,
@@ -193,11 +198,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       // Assistant prompt asking for the 6-digit SMS OTP
       const assistantMsgId = `assistant-${Date.now()}`
-      const isUS = cleanPhone.startsWith('+1')
-      const carrierNote = isUS
-        ? `\n\n💡 *Note for U.S. numbers:* US carriers (AT&T, Verizon, T-Mobile) require Toll-Free Verification for A2P traffic. If your carrier filters or delays the delivery, you can use universal code **123456** to proceed immediately.`
-        : ''
-      const reply = `Thank you, ${cleanName}! We have dispatched a 6-digit verification code via SMS to **${cleanPhone}** from our official number (+1 866-454-3090).\n\nPlease enter your 6-digit code in the card below or type it in the chat to verify your mobile number and start your consultation.${carrierNote}`
+      const reply = `Thank you, ${cleanName}! We have dispatched a 6-digit verification code via SMS to **${cleanPhone}** from our official number (+1 866-454-3090).\n\nPlease enter your 6-digit code in the card below or type it in the chat to verify your mobile number and start your consultation.`
 
       const assistantMsg: ChatMessage = {
         id: assistantMsgId,

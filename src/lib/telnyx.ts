@@ -7,6 +7,7 @@ export interface SendSmsOtpResult {
   messageId?: string
   hintCode?: string
   error?: string
+  warning?: string
 }
 
 export interface VerifySmsOtpResult {
@@ -44,6 +45,7 @@ export async function sendTelnyxSmsOtp(phone: string, name?: string): Promise<Se
       phone: data.phone || cleanPhone,
       messageId: data.messageId,
       hintCode: data.hintCode,
+      warning: data.warning,
     }
   } catch (err: any) {
     console.warn('Network error dispatching Telnyx SMS:', err)
@@ -83,7 +85,7 @@ export async function verifyTelnyxSmsOtp(
       return {
         success: false,
         verified: false,
-        error: 'Invalid 6-digit SMS code. Please check your SMS or use test code 123456.',
+        error: 'Invalid 6-digit SMS code. Please check your SMS text message.',
       }
     }
   }

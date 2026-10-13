@@ -99,7 +99,7 @@ export function ChatOtpVerificationCard({
         setIsSuccess(true)
         toast.success('Mobile phone verified via Telnyx SMS!')
       } else {
-        const errorText = 'Invalid or expired 6-digit SMS code. Please check your SMS or try 123456.'
+        const errorText = 'Invalid or expired 6-digit SMS code. Please check your SMS text message.'
         setErrorMsg(errorText)
         toast.error(errorText)
         setDigits(['', '', '', '', '', ''])
@@ -200,25 +200,6 @@ export function ChatOtpVerificationCard({
                 className="w-10 h-12 sm:w-11 sm:h-12 text-center text-lg font-bold rounded-xl border border-navy-200 bg-white text-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 shadow-sm transition-all"
               />
             ))}
-          </div>
-
-          {/* Quick test code helper for development / US carrier test */}
-          <div className="flex items-center justify-between px-3 py-1.5 bg-gold-50/70 border border-gold-200 rounded-xl mb-3 text-[11px] text-navy-700">
-            <span className="flex items-center gap-1.5">
-              <span className="text-navy-500">Testing or delayed carrier SMS?</span>
-              <span className="font-semibold text-gold-900">Code: 123456</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                const testDigits = ['1', '2', '3', '4', '5', '6']
-                setDigits(testDigits)
-                handleTriggerVerify('123456')
-              }}
-              className="text-[10px] font-bold text-gold-800 bg-gold-100 hover:bg-gold-200 border border-gold-300 px-2 py-0.5 rounded transition-colors shadow-2xs"
-            >
-              Auto-fill 123456
-            </button>
           </div>
 
           {errorMsg && (
