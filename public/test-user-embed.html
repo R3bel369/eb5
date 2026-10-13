@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shoora EB-5 Chatbot Demo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #183153;
+    }
+    header {
+      padding: 25px;
+      text-align: center;
+      background: #102d50;
+      color: white;
+    }
+    main {
+      max-width: 850px;
+      margin: 40px auto;
+      padding: 25px;
+      background: white;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Shoora EB-5</h1>
+    <p>Chatbot Integration Test</p>
+  </header>
+
+  <main>
+    <h2>Welcome to Shoora EB-5</h2>
+    <p>Ask questions about the EB-5 program and Shoora EB-5 services.</p>
+    <p id="status">Loading chatbot widget...</p>
+  </main>
+
+  <script>
+    const widget = document.createElement("script");
+    widget.src = "http://localhost:5173/widget.js";
+    widget.async = true;
+
+    widget.onload = () => {
+      document.getElementById("status").textContent =
+        "Widget JavaScript loaded.";
+    };
+
+    widget.onerror = () => {
+      document.getElementById("status").textContent =
+        "Widget not found. Check your project file path.";
+    };
+
+    document.body.appendChild(widget);
+  </script>
+</body>
+</html>

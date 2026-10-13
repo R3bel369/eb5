@@ -1,0 +1,44 @@
+[
+  {
+    "category": "Investment Capital",
+    "question": "What is the RIA 2022 TEA investment threshold for rural projects?",
+    "answer": "Under the EB-5 Reform and Integrity Act of 2022 (RIA), the minimum qualifying investment in a Targeted Employment Area (TEA) — including rural areas and areas of high unemployment — is $800,000. Rural projects receive expedited processing and 20% reserved visa set-asides.",
+    "tags": ["$800k", "rural", "TEA", "RIA 2022", "expedited"],
+    "isActive": true
+  },
+  {
+    "category": "Job Creation",
+    "question": "Can indirect and induced jobs be counted toward the 10-job requirement?",
+    "answer": "Yes. When investing through a USCIS-approved EB-5 Regional Center, up to 90% of the required 10 jobs can be indirect or induced jobs established through verified economic modeling (e.g., RIMS II or IMPLAN). Up to 10% must be direct jobs if construction is under 2 years, but for construction exceeding 24 months, 100% can be indirect/induced.",
+    "tags": ["indirect jobs", "induced jobs", "economic modeling", "regional center", "10 jobs"],
+    "isActive": true
+  },
+  {
+    "category": "Process & Timeline",
+    "question": "How does concurrent filing benefit H-1B and F-1 visa holders?",
+    "answer": "If an investor is lawfully residing in the U.S. in nonimmigrant status (e.g. H-1B, L-1, F-1, O-1), RIA 2022 permits concurrent filing of Form I-526E and Form I-485 (Adjustment of Status). This allows the applicant and qualifying family members to apply for work authorization (EAD) and travel permits (Advance Parole) while their immigrant petition is pending.",
+    "tags": ["concurrent filing", "H-1B", "F-1", "I-485", "EAD", "Advance Parole", "adjustment of status"],
+    "isActive": true
+  },
+  {
+    "category": "Regional Centers",
+    "question": "How are Regional Centers monitored under RIA 2022 compliance rules?",
+    "answer": "RIA 2022 introduced strict integrity measures including annual audits, on-site USCIS inspections, a dedicated EB-5 Integrity Fund, background checks for regional center principals, and mandatory third-party fund administration or annual CPA audited financials.",
+    "tags": ["integrity fund", "audits", "compliance", "regional center oversight", "fund administration"],
+    "isActive": true
+  },
+  {
+    "category": "Source of Funds",
+    "question": "Can gifted funds from parents or relatives be used for an EB-5 investment?",
+    "answer": "Yes. Gifted funds from parents, siblings, or other relatives are fully eligible for EB-5 investment. However, the donor must establish a complete lawful source-of-funds audit trail documenting how they acquired the gifted capital (e.g., employment savings, property sale, business earnings).",
+    "tags": ["gift", "parents", "relatives", "source of funds", "SOF", "audit trail"],
+    "isActive": true
+  },
+  {
+    "category": "Custom Replies",
+    "question": "What are Shoora EB-5's due diligence criteria for recommended projects?",
+    "answer": "Shoora EB-5 partners exclusively with established regional center operators with proven I-526E and I-829 approval track records. We analyze capital stack structure, equity cushion, developer financial health, job creation buffers (minimum 25-30% cushion), and exit strategies.",
+    "tags": ["due diligence", "shoora", "project selection", "job buffer", "track record"],
+    "isActive": true
+  }
+]
