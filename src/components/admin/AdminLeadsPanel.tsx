@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase'
 import {
   formatDateTime, statusLabel, statusVariant, scoreColor, syncStatusVariant
 } from '../../lib/utils'
-import { getLocalLeads, updateLocalLead, fetchRemoteLeads } from '../../lib/leadStorage'
+import { getLocalLeads, updateLocalLead, fetchRemoteLeads, syncLeadToServer } from '../../lib/leadStorage'
 import type { Lead, LeadStatus, SpreadsheetSyncJob } from '../../types/database'
 import toast from 'react-hot-toast'
 import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom'
@@ -56,11 +56,13 @@ function LeadList() {
       }
     } catch {}
 
-    // 3. Merge with local storage leads
+    // 3. Merge with local storage leads & auto-sync to Firestore so all domains match
     const localLeads = getLocalLeads()
     for (const local of localLeads) {
       if (!combinedLeads.some(l => l.id === local.id)) {
         combinedLeads.push(local)
+        // Auto-sync missing lead to shared Cloud Firestore
+        syncLeadToServer(local).catch(() => {})
       }
     }
 
