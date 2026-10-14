@@ -1,49 +1,92 @@
 /**
- * Shoora EB-5 AI Chatbot Embeddable Widget Script
- * Embed this script on any website to display the floating Shoora EB-5 AI Chatbot.
- *
- * Example:
- * <script src="https://your-domain.com/widget.js" 
- *         data-position="bottom-right" 
- *         data-color="#C9A84C" 
- *         async></script>
+ * Shoora EB-5 AI Chatbot — Production Embeddable Widget
+ * 
+ * Embed on any external website (HTML, WordPress, React, Vite, Webflow, Shopify):
+ * <script src="https://YOUR-DOMAIN/widget.js" async></script>
+ * 
+ * Features:
+ * - Zero external dependencies (Vanilla JS)
+ * - Complete CSS isolation via Shadow DOM
+ * - Responsive floating chat launcher & mobile drawer
+ * - Open, minimize, and close controls
+ * - Connects seamlessly to Shoora EB-5 AI backend, knowledge base, & CRM
+ * - Global programmatic API: window.ShooraEB5Widget.open(), close(), toggle()
  */
 
 (function () {
   'use strict';
 
-  // Prevent multiple initializations
+  // Prevent multiple initializations on the same page
   if (window.__SHOORA_WIDGET_LOADED__) return;
   window.__SHOORA_WIDGET_LOADED__ = true;
 
-  // Find script element and extract configuration
+  // Locate the script tag and extract origin & configuration
   const currentScript =
     document.currentScript ||
     document.querySelector('script[src*="widget.js"]') ||
     document.querySelector('script[data-shoora-widget]');
 
-  let scriptUrl = 'http://localhost:5173';
+  let detectedOrigin = '';
   if (currentScript && currentScript.src) {
     try {
-      const parsed = new URL(currentScript.src);
-      scriptUrl = parsed.origin;
+      const parsed = new URL(currentScript.src, window.location.href);
+      detectedOrigin = parsed.origin;
     } catch (e) {
-      // fallback to default
+      // Fallback if URL parsing fails
     }
   }
 
-  const hostUrl = (currentScript && currentScript.getAttribute('data-host')) || scriptUrl;
-  const position = (currentScript && currentScript.getAttribute('data-position')) || 'bottom-right';
-  const primaryColor = (currentScript && currentScript.getAttribute('data-color')) || '#C9A84C';
-  const botTitle = (currentScript && currentScript.getAttribute('data-title')) || 'Shoora EB-5 Advisor';
+  // Production fallback domain (replaces localhost in production)
+  const productionFallback = (typeof window !== 'undefined' && window.location.hostname !== 'localhost')
+    ? window.location.origin
+    : 'https://chatbot-ebcc2.web.app';
 
+  const hostUrl = (currentScript && currentScript.getAttribute('data-host')) || detectedOrigin || productionFallback;
+  const position = (currentScript && currentScript.getAttribute('data-position')) || 'bottom-right';
+  const botTitle = (currentScript && currentScript.getAttribute('data-title')) || 'Shoora EB-5 AI Advisor';
   const isLeft = position === 'bottom-left';
 
-  // Inject Stylesheet
+  // Create isolated Host Element
+  const host = document.createElement('div');
+  host.id = 'shoora-eb5-widget-root';
+  host.setAttribute('aria-live', 'polite');
+  host.style.all = 'initial';
+  host.style.position = 'fixed';
+  host.style.zIndex = '2147483647'; // Highest possible z-index
+  host.style.bottom = '0';
+  if (isLeft) {
+    host.style.left = '0';
+  } else {
+    host.style.right = '0';
+  }
+  host.style.width = '0';
+  host.style.height = '0';
+  host.style.overflow = 'visible';
+
+  // Attach Shadow DOM for CSS isolation
+  let shadowRoot;
+  if (host.attachShadow) {
+    try {
+      shadowRoot = host.attachShadow({ mode: 'open' });
+    } catch (err) {
+      shadowRoot = host;
+    }
+  } else {
+    shadowRoot = host;
+  }
+
+  // Scoped CSS styles injected only inside the Shadow DOM
   const style = document.createElement('style');
-  style.id = 'shoora-widget-styles';
   style.textContent = `
-    .shoora-widget-launcher {
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .shoora-launcher-btn {
       position: fixed;
       bottom: 26px;
       ${isLeft ? 'left: 26px;' : 'right: 26px;'}
@@ -61,12 +104,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 999999;
+      z-index: 2147483647;
       transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       user-select: none;
+      outline: none;
     }
-    .shoora-widget-launcher:hover {
+    .shoora-launcher-btn:hover {
       transform: scale(1.08) translateY(-3px);
       box-shadow: 
         0 20px 42px -4px rgba(5, 16, 36, 0.65),
@@ -74,12 +118,16 @@
         inset 0 1.5px 2px rgba(255, 255, 255, 0.45);
       border-color: #f7df94;
     }
-    .shoora-widget-launcher:active {
+    .shoora-launcher-btn:active {
       transform: scale(0.96) translateY(0);
+    }
+    .shoora-launcher-btn:focus-visible {
+      outline: 3px solid #ECC974;
+      outline-offset: 4px;
     }
 
     /* Radar Beacon Status */
-    .shoora-widget-beacon {
+    .shoora-beacon {
       position: absolute;
       top: 1px;
       right: 1px;
@@ -120,10 +168,10 @@
     }
 
     /* Interactive Welcome Teaser Callout Card */
-    .shoora-widget-teaser {
-      position: absolute;
-      bottom: 82px;
-      ${isLeft ? 'left: 0;' : 'right: 0;'}
+    .shoora-teaser {
+      position: fixed;
+      bottom: 104px;
+      ${isLeft ? 'left: 26px;' : 'right: 26px;'}
       width: 290px;
       background: linear-gradient(135deg, rgba(8, 22, 48, 0.96) 0%, rgba(13, 34, 72, 0.96) 100%);
       backdrop-filter: blur(12px);
@@ -138,9 +186,10 @@
       cursor: pointer;
       animation: shooraTeaserPop 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       transition: all 0.25s ease;
-      z-index: 999998;
+      z-index: 2147483646;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    .shoora-widget-teaser:hover {
+    .shoora-teaser:hover {
       transform: translateY(-2px);
       border-color: rgba(220, 185, 95, 0.85);
       box-shadow: 
@@ -162,7 +211,7 @@
       color: #ECC974;
       letter-spacing: 0.02em;
     }
-    .shoora-teaser-online-dot {
+    .shoora-teaser-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
@@ -208,7 +257,6 @@
       border-bottom: 1px solid rgba(220, 185, 95, 0.45);
       transform: rotate(45deg);
     }
-
     @keyframes shooraTeaserPop {
       0% {
         opacity: 0;
@@ -220,7 +268,8 @@
       }
     }
 
-    .shoora-widget-iframe-container {
+    /* Floating Chat Panel Container */
+    .shoora-panel {
       position: fixed;
       bottom: 104px;
       ${isLeft ? 'left: 26px;' : 'right: 26px;'}
@@ -235,16 +284,16 @@
         0 0 0 1px rgba(220, 185, 95, 0.35);
       background: #FAFAF7;
       overflow: hidden;
-      z-index: 999998;
+      z-index: 2147483646;
       display: none;
       transform-origin: ${isLeft ? 'bottom left' : 'bottom right'};
       transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .shoora-widget-iframe-container.shoora-open {
+    .shoora-panel.shoora-open {
       display: block;
       animation: shooraSlideUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    .shoora-widget-iframe {
+    .shoora-iframe {
       width: 100%;
       height: 100%;
       border: none;
@@ -260,8 +309,10 @@
         transform: translateY(0) scale(1);
       }
     }
+
+    /* Mobile Responsive Viewport */
     @media (max-width: 640px) {
-      .shoora-widget-iframe-container {
+      .shoora-panel {
         bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
@@ -272,33 +323,27 @@
         border-radius: 0 !important;
         border: none !important;
       }
-      .shoora-widget-teaser {
-        width: calc(100vw - 48px);
+      .shoora-teaser {
+        width: calc(100vw - 48px) !important;
         right: 12px !important;
         left: 12px !important;
       }
     }
   `;
 
-  // Create Iframe Container
-  const container = document.createElement('div');
-  container.className = 'shoora-widget-iframe-container';
-  container.id = 'shoora-widget-container';
+  // Create Chatbot Iframe Panel
+  const panel = document.createElement('div');
+  panel.className = 'shoora-panel';
+  panel.id = 'shoora-panel';
 
   const iframe = document.createElement('iframe');
-  iframe.className = 'shoora-widget-iframe';
+  iframe.className = 'shoora-iframe';
   iframe.title = botTitle;
   iframe.src = `${hostUrl}/widget`;
-  iframe.allow = 'clipboard-write';
-  container.appendChild(iframe);
+  iframe.allow = 'clipboard-write; camera; microphone; autoplay';
+  panel.appendChild(iframe);
 
-  // Create Floating Launcher Button
-  const launcher = document.createElement('div');
-  launcher.className = 'shoora-widget-launcher';
-  launcher.id = 'shoora-widget-launcher';
-  launcher.title = 'Chat with Shoora EB-5 AI Advisor';
-
-  // Premium Multi-Layer SVG Icons (Modern AI Sparkle Chat Glyph)
+  // SVG Icons
   const chatIconSvg = `
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -308,7 +353,6 @@
           <stop offset="100%" stop-color="#C29432"/>
         </linearGradient>
       </defs>
-      <!-- Chat Bubble Base with Gradient Fill & Outline -->
       <path d="M7 16.5C7 11.25 10.75 7.5 16 7.5C21.25 7.5 25 11.25 25 16.5C25 21.75 21.25 25.5 16 25.5C14.35 25.5 12.8 25.1 11.45 24.35L7.5 25.5L8.75 21.75C7.65 20.25 7 18.45 7 16.5Z" 
             fill="url(#shooraGoldGrad)" 
             fill-opacity="0.18"
@@ -316,10 +360,8 @@
             stroke-width="2.2" 
             stroke-linecap="round" 
             stroke-linejoin="round"/>
-      <!-- Inner Message Lines -->
       <line x1="12" y1="14" x2="20" y2="14" stroke="url(#shooraGoldGrad)" stroke-width="2" stroke-linecap="round"/>
       <line x1="12" y1="18.5" x2="17.5" y2="18.5" stroke="url(#shooraGoldGrad)" stroke-width="2" stroke-linecap="round"/>
-      <!-- AI Sparkle Star -->
       <path d="M23.5 4.5L24.5 7.5L27.5 8.5L24.5 9.5L23.5 12.5L22.5 9.5L19.5 8.5L22.5 7.5L23.5 4.5Z" 
             fill="url(#shooraGoldGrad)"/>
     </svg>
@@ -332,27 +374,33 @@
     </svg>
   `;
 
+  // Floating Launcher Button
+  const launcher = document.createElement('button');
+  launcher.type = 'button';
+  launcher.className = 'shoora-launcher-btn';
+  launcher.id = 'shoora-launcher-btn';
+  launcher.setAttribute('aria-label', 'Open Shoora EB-5 AI Advisor Chat');
   launcher.innerHTML = `
-    <div id="shoora-icon-wrapper" style="display:flex;align-items:center;justify-content:center;transition:transform 0.3s ease;">
+    <div id="shoora-icon-wrap" style="display:flex;align-items:center;justify-content:center;transition:transform 0.3s ease;">
       ${chatIconSvg}
     </div>
-    <div class="shoora-widget-beacon">
+    <div class="shoora-beacon">
       <div class="shoora-beacon-ring"></div>
       <div class="shoora-beacon-core"></div>
     </div>
   `;
 
-  // Create Interactive Welcome Teaser Callout
+  // Interactive Teaser Card
   const teaser = document.createElement('div');
-  teaser.className = 'shoora-widget-teaser';
-  teaser.id = 'shoora-widget-teaser';
+  teaser.className = 'shoora-teaser';
+  teaser.id = 'shoora-teaser';
   teaser.innerHTML = `
     <div class="shoora-teaser-header">
       <div class="shoora-teaser-advisor">
-        <span class="shoora-teaser-online-dot"></span>
+        <span class="shoora-teaser-dot"></span>
         <span>Shoora EB-5 AI Advisor</span>
       </div>
-      <button type="button" class="shoora-teaser-close" id="shoora-teaser-close-btn" title="Dismiss">✕</button>
+      <button type="button" class="shoora-teaser-close" id="shoora-teaser-close-btn" title="Dismiss" aria-label="Dismiss teaser">✕</button>
     </div>
     <div class="shoora-teaser-body">
       Have questions on <strong>EB-5 Green Cards</strong>, investments, or wait times? Let's chat!
@@ -360,19 +408,68 @@
     <div class="shoora-teaser-arrow"></div>
   `;
 
-  // Interactive teaser click & dismiss handlers
+  // State Management
+  let isOpen = false;
+
+  function toggleWidget(forceState) {
+    if (typeof forceState === 'boolean') {
+      isOpen = forceState;
+    } else {
+      isOpen = !isOpen;
+    }
+
+    const iconWrap = shadowRoot.getElementById ? shadowRoot.getElementById('shoora-icon-wrap') : host.querySelector('#shoora-icon-wrap');
+
+    if (isOpen) {
+      panel.classList.add('shoora-open');
+      launcher.setAttribute('aria-expanded', 'true');
+      launcher.setAttribute('aria-label', 'Close Shoora EB-5 AI Advisor');
+      if (iconWrap) {
+        iconWrap.style.transform = 'rotate(90deg)';
+        iconWrap.innerHTML = closeIconSvg;
+      }
+      if (teaser && teaser.parentNode) {
+        teaser.style.display = 'none';
+      }
+    } else {
+      panel.classList.remove('shoora-open');
+      launcher.setAttribute('aria-expanded', 'false');
+      launcher.setAttribute('aria-label', 'Open Shoora EB-5 AI Advisor');
+      if (iconWrap) {
+        iconWrap.style.transform = 'rotate(0deg)';
+        iconWrap.innerHTML = chatIconSvg;
+      }
+    }
+  }
+
+  // Teaser Event Listeners
   teaser.addEventListener('click', function (e) {
-    if (e.target && (e.target.id === 'shoora-teaser-close-btn' || e.target.closest('#shoora-teaser-close-btn'))) {
+    const target = e.target;
+    if (target && (target.id === 'shoora-teaser-close-btn' || target.closest('#shoora-teaser-close-btn'))) {
       e.stopPropagation();
       teaser.style.opacity = '0';
       teaser.style.transform = 'translateY(10px) scale(0.92)';
-      setTimeout(() => teaser.remove(), 250);
+      setTimeout(() => {
+        if (teaser && teaser.parentNode) teaser.remove();
+      }, 250);
       return;
     }
-    toggleWidget();
+    toggleWidget(true);
   });
 
-  // Safe mounting function (handles script loading before DOM is ready)
+  launcher.addEventListener('click', () => toggleWidget());
+
+  // Handle postMessages from inside the iframe (minimize, close, open)
+  window.addEventListener('message', function (e) {
+    if (!e.data || typeof e.data !== 'object') return;
+    if (e.data.type === 'shoora_close_widget' || e.data.type === 'shoora_minimize_widget') {
+      if (isOpen) toggleWidget(false);
+    } else if (e.data.type === 'shoora_open_widget') {
+      if (!isOpen) toggleWidget(true);
+    }
+  });
+
+  // Safe DOM Mounting
   function mount() {
     if (!document.body) {
       if (document.readyState === 'loading') {
@@ -383,17 +480,12 @@
       return;
     }
 
-    if (!document.getElementById('shoora-widget-styles')) {
-      (document.head || document.body).appendChild(style);
-    }
-    if (!document.getElementById('shoora-widget-container')) {
-      document.body.appendChild(container);
-    }
-    if (!document.getElementById('shoora-widget-teaser')) {
-      document.body.appendChild(teaser);
-    }
-    if (!document.getElementById('shoora-widget-launcher')) {
-      document.body.appendChild(launcher);
+    if (!document.getElementById('shoora-eb5-widget-root')) {
+      shadowRoot.appendChild(style);
+      shadowRoot.appendChild(panel);
+      shadowRoot.appendChild(teaser);
+      shadowRoot.appendChild(launcher);
+      document.body.appendChild(host);
     }
   }
 
@@ -403,49 +495,24 @@
     mount();
   }
 
-  let isOpen = false;
-
-  function toggleWidget() {
-    isOpen = !isOpen;
-    const iconWrapper = document.getElementById('shoora-icon-wrapper');
-
-    if (isOpen) {
-      container.classList.add('shoora-open');
-      if (iconWrapper) {
-        iconWrapper.style.transform = 'rotate(90deg)';
-        iconWrapper.innerHTML = closeIconSvg;
-      }
-      if (teaser && teaser.parentNode) {
-        teaser.style.display = 'none';
-      }
-    } else {
-      container.classList.remove('shoora-open');
-      if (iconWrapper) {
-        iconWrapper.style.transform = 'rotate(0deg)';
-        iconWrapper.innerHTML = chatIconSvg;
-      }
-    }
-  }
-
-  launcher.addEventListener('click', toggleWidget);
-
-  // Listen for close events posted from inside the iframe
-  window.addEventListener('message', function (e) {
-    if (e.data && e.data.type === 'shoora_close_widget') {
-      if (isOpen) toggleWidget();
-    } else if (e.data && e.data.type === 'shoora_open_widget') {
-      if (!isOpen) toggleWidget();
-    }
-  });
-
-  // Expose global controller
+  // Public JavaScript API on the host page
   window.ShooraEB5Widget = {
     open: function () {
-      if (!isOpen) toggleWidget();
+      if (!isOpen) toggleWidget(true);
     },
     close: function () {
-      if (isOpen) toggleWidget();
+      if (isOpen) toggleWidget(false);
     },
-    toggle: toggleWidget,
+    minimize: function () {
+      if (isOpen) toggleWidget(false);
+    },
+    toggle: function () {
+      toggleWidget();
+    },
+    isOpen: function () {
+      return isOpen;
+    },
+    version: '1.2.0',
+    host: hostUrl
   };
 })();

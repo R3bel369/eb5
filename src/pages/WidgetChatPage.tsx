@@ -109,6 +109,12 @@ export function WidgetChatPage() {
     }
   }
 
+  const handleMinimizeWidget = () => {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'shoora_minimize_widget' }, '*')
+    }
+  }
+
   const handleCloseWidget = () => {
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ type: 'shoora_close_widget' }, '*')
@@ -167,6 +173,13 @@ export function WidgetChatPage() {
             title="Reset conversation"
           >
             <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleMinimizeWidget}
+            className="p-1.5 text-navy-300 hover:text-white rounded-lg hover:bg-navy-800/80 transition-colors"
+            title="Minimize chatbot"
+          >
+            <Minus className="w-4 h-4" />
           </button>
           <button
             onClick={handleCloseWidget}
