@@ -9,7 +9,7 @@ import {
   appendStoredMessage,
 } from '../lib/conversationStorage'
 import { saveLocalLead } from '../lib/leadStorage'
-import { sendTelnyxSmsOtp, verifyTelnyxSmsOtp } from '../lib/telnyx'
+import { sendFirebasePhoneOtp, verifyFirebasePhoneOtp } from '../lib/firebaseAuthOtp'
 import toast from 'react-hot-toast'
 
 // ─── Context shape ────────────────────────────────────────────────────────────
@@ -180,17 +180,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         message_content: userSummary,
       })
 
-      // Dispatch real Telnyx SMS OTP
-      const res = await sendTelnyxSmsOtp(cleanPhone, cleanName)
-      if (res.warning) {
-        toast.error(`Telnyx: ${res.warning}`, { duration: 6000 })
+      // Dispatch Firebase SMS OTP
+      const res = await sendFirebasePhoneOtp(cleanPhone, cleanName)
+      if (res.error) {
+        toast.error(`Firebase Auth: ${res.error}`, { duration: 6000 })
       }
 
       setOtpState({
-        phone: cleanPhone,
+        phone: res.formattedPhone || cleanPhone,
         email: cleanEmail,
         isVerifying: false,
-        error: null,
+        error: res.error || null,
         isResending: false,
         otpHint: res.hintCode || null,
       })
@@ -198,7 +198,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       // Assistant prompt asking for the 6-digit SMS OTP
       const assistantMsgId = `assistant-${Date.now()}`
-      const reply = `Thank you, ${cleanName}! We have dispatched a 6-digit verification code via SMS to **${cleanPhone}** from our official number (+1 866-454-3090).\n\nPlease enter your 6-digit code in the card below or type it in the chat to verify your mobile number and start your consultation.`
+      const reply = `Thank you, ${cleanName}! We have dispatched a 6-digit verification code via Firebase SMS to **${res.formattedPhone || cleanPhone}**.\n\nPlease enter your 6-digit code in the card below or type it in the chat to verify your mobile number and start your consultation.`
 
       const assistantMsg: ChatMessage = {
         id: assistantMsgId,
@@ -228,7 +228,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       setOtpState((prev) => ({ ...prev, isVerifying: true, error: null }))
 
-      const res = await verifyTelnyxSmsOtp(targetPhone, cleanCode, otpState.otpHint)
+      const res = await verifyFirebasePhoneOtp(targetPhone, cleanCode, otpState.otpHint)
 
       if (!res.verified) {
         setOtpState((prev) => ({
@@ -265,44 +265,46 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         preferred_contact_method: 'phone',
         investment_timeframe: 'within_12_months',
         optional_budget_range: '$800,000 - $1,050,000',
-        admin_notes: `Phone verified via Telnyx SMS (+18664543090) on ${new Date().toLocaleString()}`,
+        admin_notes: `Phone verified via Firebase SMS on ${new Date().toLocaleString()}`,
       })
 
-      // 2. Also upsert into Supabase leads table
-      try {
-        await supabase.from('leads').upsert(
-          {
-            full_name: userName,
-            verified_email: targetEmail,
-            verified_phone: targetPhone,
-            lead_source: 'ai_chatbot',
-            lead_status: 'consultation_requested',
-            engagement_score: 95,
-            consultation_requested: true,
-            follow_up_consent: true,
-            marketing_email_consent: true,
-            marketing_sms_consent: true,
-            admin_notes: `Phone verified via Telnyx SMS (+18664543090) on ${new Date().toLocaleString()}`,
-            last_interaction_at: new Date().toISOString(),
-          },
-          { onConflict: 'verified_email' }
-        )
-      } catch (err) {
-        console.warn('Supabase lead upsert notice:', err)
-      }
+      // 2. Also upsert into Supabase leads table if enabled
+      if (import.meta.env.VITE_ENABLE_SUPABASE_SYNC === 'true') {
+        try {
+          await supabase.from('leads').upsert(
+            {
+              full_name: userName,
+              verified_email: targetEmail,
+              verified_phone: targetPhone,
+              lead_source: 'ai_chatbot',
+              lead_status: 'consultation_requested',
+              engagement_score: 95,
+              consultation_requested: true,
+              follow_up_consent: true,
+              marketing_email_consent: true,
+              marketing_sms_consent: true,
+              admin_notes: `Phone verified via Firebase SMS on ${new Date().toLocaleString()}`,
+              last_interaction_at: new Date().toISOString(),
+            },
+            { onConflict: 'verified_email' }
+          )
+        } catch (err) {
+          console.warn('Supabase lead upsert notice:', err)
+        }
 
-      // 3. Upsert into Supabase conversations table
-      try {
-        await supabase.from('conversations').upsert({
-          id: conversationId,
-          user_name: userName,
-          user_email: targetEmail,
-          user_phone: targetPhone,
-          conversation_title: `EB-5 Inquiry - ${userName}`,
-          updated_at: new Date().toISOString(),
-        })
-      } catch (err) {
-        console.warn('Supabase conversation upsert notice:', err)
+        // 3. Upsert into Supabase conversations table
+        try {
+          await supabase.from('conversations').upsert({
+            id: conversationId,
+            user_name: userName,
+            user_email: targetEmail,
+            user_phone: targetPhone,
+            conversation_title: `EB-5 Inquiry - ${userName}`,
+            updated_at: new Date().toISOString(),
+          })
+        } catch (err) {
+          console.warn('Supabase conversation upsert notice:', err)
+        }
       }
 
       // 4. Notify admin panels in real-time
@@ -327,7 +329,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       // Assistant response confirming verification
       const assistantMsgId = `assistant-${Date.now()}`
-      const reply = `✅ **Phone number verified successfully via Telnyx SMS!**\n\nWelcome, ${userName}! Your consultation profile is active (Phone: ${targetPhone}, Email: ${targetEmail}).\n\nHow can I help you today with your EB-5 immigration and investment plans? Feel free to ask about minimum investment amounts ($800,000 TEA vs $1,050,000), rural project priority processing, concurrent filing for H-1B / F-1 visa holders, or job creation requirements.`
+      const reply = `✅ **Phone number verified successfully via Firebase SMS!**\n\nWelcome, ${userName}! Your consultation profile is active (Phone: ${targetPhone}, Email: ${targetEmail}).\n\nHow can I help you today with your EB-5 immigration and investment plans? Feel free to ask about minimum investment amounts ($800,000 TEA vs $1,050,000), rural project priority processing, concurrent filing for H-1B / F-1 visa holders, or job creation requirements.`
 
       const assistantMsg: ChatMessage = {
         id: assistantMsgId,
@@ -352,8 +354,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const targetPhone = otpState.phone || collectedData.phone
     if (!targetPhone) return
     setOtpState((prev) => ({ ...prev, isResending: true, error: null }))
-    const res = await sendTelnyxSmsOtp(targetPhone, collectedData.name)
-    setOtpState((prev) => ({ ...prev, isResending: false, otpHint: res.hintCode || prev.otpHint }))
+    const res = await sendFirebasePhoneOtp(targetPhone, collectedData.name)
+    if (res.error) {
+      toast.error(`Firebase Auth: ${res.error}`, { duration: 6000 })
+    }
+    setOtpState((prev) => ({
+      ...prev,
+      isResending: false,
+      error: res.error || null,
+      otpHint: res.hintCode || prev.otpHint,
+    }))
   }, [otpState.phone, collectedData])
 
   const changeOtpContact = useCallback(() => {
@@ -473,7 +483,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 engagement_score: 65,
                 admin_notes: 'Email provided in chat conversation.',
               })
-              assistantReply = `Thank you! We've recorded your email as **${email}**. Please enter your mobile phone number in the card above (or type it here) to receive your 6-digit SMS verification code via Telnyx (+1 866-454-3090):`
+              assistantReply = `Thank you! We've recorded your email as **${email}**. Please enter your mobile phone number in the card above (or type it here) to receive your 6-digit SMS verification code via Firebase:`
             } else {
               // Check if user asked an actual question instead of giving contact details
               const isQuestion = trimmed.includes('?') || /^(what|how|why|when|where|can|is|tell me|who)/i.test(trimmed)
@@ -524,16 +534,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             }
           } else if (/^(resend|resend code|send again|resend sms)/i.test(trimmed)) {
             await resendOtpCode()
-            assistantReply = `A new 6-digit verification code has been dispatched via SMS to **${otpState.phone}** from +1 866-454-3090. Please enter your code to continue.`
+            assistantReply = `A new 6-digit verification code has been dispatched via Firebase SMS to **${otpState.phone}**. Please enter your code to continue.`
           } else {
             // Check if user is typing a new phone number
             const phoneMatch = trimmed.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/)
             if (phoneMatch) {
               const newPhone = phoneMatch[0].trim()
               setOtpState((prev) => ({ ...prev, phone: newPhone }))
-              const res = await sendTelnyxSmsOtp(newPhone, collectedData.name)
+              const res = await sendFirebasePhoneOtp(newPhone, collectedData.name)
               setOtpState((prev) => ({ ...prev, otpHint: res.hintCode || prev.otpHint }))
-              assistantReply = `Updated phone number to **${newPhone}**. A new 6-digit verification code has been dispatched via Telnyx SMS (+1 866-454-3090). Please enter the code to continue.`
+              assistantReply = `Updated phone number to **${res.formattedPhone || newPhone}**. A new 6-digit verification code has been dispatched via Firebase SMS. Please enter the code to continue.`
             } else {
               assistantReply = `Please enter the 6-digit SMS code sent to **${otpState.phone}** to verify your phone number, or type "Resend" to request a new code.`
             }

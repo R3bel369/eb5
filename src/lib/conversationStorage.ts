@@ -3,6 +3,8 @@
 // and ensures immediate visibility in the Admin Dashboard.
 
 import { supabase } from './supabase'
+import { db } from './firebase'
+import { doc, setDoc } from 'firebase/firestore'
 
 export interface StoredMessage {
   id: string
@@ -213,15 +215,21 @@ export function createStoredConversation(params: {
   const updated = [newConv, ...current.filter(c => c.id !== id)]
   saveStoredConversations(updated)
 
-  // Try saving to Supabase if available
-  supabase
-    .from('conversations')
-    .insert({
-      id: newConv.id,
-      auth_user_id: newConv.auth_user_id,
-      conversation_title: newConv.conversation_title,
-    })
-    .then(undefined, () => {})
+  // Sync to Firebase Firestore
+  setDoc(doc(db, 'conversations', newConv.id), newConv, { merge: true }).catch((err) => {
+    console.warn('Firebase Firestore conversation sync notice:', err)
+  })
+
+  if (import.meta.env.VITE_ENABLE_SUPABASE_SYNC === 'true') {
+    supabase
+      .from('conversations')
+      .insert({
+        id: newConv.id,
+        auth_user_id: newConv.auth_user_id,
+        conversation_title: newConv.conversation_title,
+      })
+      .then(undefined, () => {})
+  }
 
   return newConv
 }
@@ -247,14 +255,16 @@ export function updateStoredConversationUserInfo(
   current[idx] = conv
   saveStoredConversations(current)
 
-  supabase
-    .from('conversations')
-    .update({
-      conversation_title: conv.conversation_title,
-      updated_at: conv.updated_at,
-    })
-    .eq('id', id)
-    .then(undefined, () => {})
+  if (import.meta.env.VITE_ENABLE_SUPABASE_SYNC === 'true') {
+    supabase
+      .from('conversations')
+      .update({
+        conversation_title: conv.conversation_title,
+        updated_at: conv.updated_at,
+      })
+      .eq('id', id)
+      .then(undefined, () => {})
+  }
 }
 
 export function appendStoredMessage(
@@ -287,15 +297,22 @@ export function appendStoredMessage(
     conv.updated_at = fullMsg.created_at
     saveStoredConversations([...current])
 
-    supabase
-      .from('messages')
-      .insert({
-        id: fullMsg.id,
-        conversation_id: conversationId,
-        sender_type: fullMsg.sender_type,
-        message_content: fullMsg.message_content,
-      })
-      .then(undefined, () => {})
+    // Sync updated conversation to Firebase Firestore
+    setDoc(doc(db, 'conversations', conversationId), conv, { merge: true }).catch((err) => {
+      console.warn('Firebase Firestore message sync notice:', err)
+    })
+
+    if (import.meta.env.VITE_ENABLE_SUPABASE_SYNC === 'true') {
+      supabase
+        .from('messages')
+        .insert({
+          id: fullMsg.id,
+          conversation_id: conversationId,
+          sender_type: fullMsg.sender_type,
+          message_content: fullMsg.message_content,
+        })
+        .then(undefined, () => {})
+    }
   }
 }
 
@@ -304,5 +321,7 @@ export function deleteStoredConversation(id: string): void {
   const filtered = current.filter(c => c.id !== id)
   saveStoredConversations(filtered)
 
-  supabase.from('conversations').delete().eq('id', id).then(undefined, () => {})
+  if (import.meta.env.VITE_ENABLE_SUPABASE_SYNC === 'true') {
+    supabase.from('conversations').delete().eq('id', id).then(undefined, () => {})
+  }
 }

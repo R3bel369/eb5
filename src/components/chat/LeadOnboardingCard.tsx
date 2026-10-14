@@ -68,7 +68,7 @@ export function LeadOnboardingCard({ onSubmit, onSkip }: LeadOnboardingCardProps
       email: email.trim(),
       phone: fullPhone,
     })
-    toast.success('Dispatching SMS verification code via Telnyx...')
+    toast.success('Dispatching SMS verification code via Firebase...')
   }
 
   return (

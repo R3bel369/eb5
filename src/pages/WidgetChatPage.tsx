@@ -206,6 +206,7 @@ export function WidgetChatPage() {
             <ChatOtpVerificationCard
               phone={otpState.phone}
               email={otpState.email}
+              externalError={otpState.error}
               onVerify={verifyOtpCode}
               onResend={resendOtpCode}
               onChangePhone={changeOtpContact}

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 interface ChatOtpVerificationCardProps {
   phone: string
   email?: string
+  externalError?: string | null
   onVerify: (code: string) => Promise<boolean>
   onResend: () => Promise<void>
   onChangePhone: () => void
@@ -13,6 +14,7 @@ interface ChatOtpVerificationCardProps {
 export function ChatOtpVerificationCard({
   phone,
   email,
+  externalError,
   onVerify,
   onResend,
   onChangePhone,
@@ -21,9 +23,15 @@ export function ChatOtpVerificationCard({
   const [submitting, setSubmitting] = useState(false)
   const [resending, setResending] = useState(false)
   const [cooldown, setCooldown] = useState(60)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(externalError || null)
   const [isSuccess, setIsSuccess] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  useEffect(() => {
+    if (externalError) {
+      setErrorMsg(externalError)
+    }
+  }, [externalError])
 
   // Cooldown countdown
   useEffect(() => {
@@ -97,7 +105,7 @@ export function ChatOtpVerificationCard({
       const ok = await onVerify(code)
       if (ok) {
         setIsSuccess(true)
-        toast.success('Mobile phone verified via Telnyx SMS!')
+        toast.success('Mobile phone verified via Firebase SMS!')
       } else {
         const errorText = 'Invalid or expired 6-digit SMS code. Please check your SMS text message.'
         setErrorMsg(errorText)
@@ -125,7 +133,7 @@ export function ChatOtpVerificationCard({
       setCooldown(60)
       setDigits(['', '', '', '', '', ''])
       inputRefs.current[0]?.focus()
-      toast.success('New SMS code dispatched via Telnyx.')
+      toast.success('New SMS code dispatched via Firebase.')
     } catch {
       toast.error('Failed to resend SMS code. Please try again.')
     } finally {
@@ -153,7 +161,7 @@ export function ChatOtpVerificationCard({
 
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-semibold">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Telnyx SMS (+1 866-454-3090)</span>
+          <span>Firebase SMS OTP</span>
         </div>
       </div>
 

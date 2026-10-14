@@ -3,6 +3,8 @@
 // even when backend connectivity is offline or placeholder.
 
 import type { Lead } from '../types/database'
+import { db } from './firebase'
+import { doc, setDoc, getDocs, collection } from 'firebase/firestore'
 
 const LEADS_STORAGE_KEY = 'shoora_local_leads'
 
@@ -114,7 +116,14 @@ function cleanPhoneDigits(phone?: string | null): string {
 }
 
 export async function syncLeadToServer(lead: Lead) {
-  // 1. Post to /api/leads
+  // 1. Post to Firebase Firestore
+  try {
+    await setDoc(doc(db, 'leads', lead.id), lead, { merge: true })
+  } catch (err) {
+    console.warn('Firebase Firestore lead sync notice:', err)
+  }
+
+  // 2. Post to /api/leads if available
   try {
     await fetch('/api/leads', {
       method: 'POST',
@@ -127,6 +136,15 @@ export async function syncLeadToServer(lead: Lead) {
 }
 
 export async function fetchRemoteLeads(): Promise<Lead[]> {
+  try {
+    const snapshot = await getDocs(collection(db, 'leads'))
+    if (!snapshot.empty) {
+      return snapshot.docs.map((d) => d.data() as Lead)
+    }
+  } catch (err) {
+    // Fall back to API
+  }
+
   try {
     const res = await fetch('/api/leads')
     if (res.ok) {
