@@ -613,7 +613,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             }
 
             if (!assistantReply) {
-              assistantReply = `Under the EB-5 Reform and Integrity Act of 2022 (RIA), the minimum qualifying investment is **$800,000** for Targeted Employment Areas (TEA — Rural or High Unemployment) and **$1,050,000** for standard non-TEA projects. All investments must create at least 10 permanent full-time U.S. jobs.\n\nWould you like more details on TEA designations, concurrent filing under Form I-526E / I-485, or due diligence considerations?`
+              assistantReply = `Thank you for your inquiry with **Shoora EB-5**!\n\nHere are key fundamentals under the EB-5 Reform and Integrity Act of 2022 (RIA):\n• **Capital Requirement**: **$800,000** for Targeted Employment Areas (TEA — Rural or High Unemployment) and **$1,050,000** for non-TEA projects.\n• **Job Creation**: Minimum 10 full-time U.S. jobs per investor (indirect and induced jobs qualify in Regional Center projects).\n• **Rural Priority Processing**: Rural TEA projects receive statutory priority processing (averaging 6–12 months).\n• **Concurrent Filing**: Investors in the U.S. on H-1B, L-1, or F-1 OPT can file Form I-485 simultaneously and receive an open EAD work permit in 60–180 days.\n• **Full Family Inclusion**: Includes your spouse and all unmarried children under 21 under a single $800,000 investment.\n\nWould you like to discuss your specific source of funds, timeline, or schedule a confidential advisory session with our team?`
               sources = ['USCIS EB-5 Guidelines', 'Shoora EB-5 Advisory Desk']
             }
           }
