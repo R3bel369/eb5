@@ -7,7 +7,7 @@ import { cn } from '../../lib/utils'
 
 interface AvatarProps {
   role: 'assistant' | 'user'
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   showStatus?: boolean
   className?: string
 }
@@ -36,9 +36,10 @@ export function Avatar({
     : getUserAvatarUrl(settings)
 
   const sizeClasses = {
-    sm: 'w-7 h-7 text-[11px]',
-    md: 'w-9 h-9 text-xs',
-    lg: 'w-12 h-12 text-sm',
+    sm: 'w-9 h-9 text-xs',
+    md: 'w-12 h-12 text-sm',
+    lg: 'w-16 h-16 text-base',
+    xl: 'w-20 h-20 text-lg',
   }[size]
 
   return (
@@ -65,7 +66,7 @@ export function Avatar({
 
       {showStatus && isAssistant && (
         <span
-          className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full ring-1 ring-emerald-600/20"
+          className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full ring-1 ring-emerald-600/20"
           title="Online & Ready"
         />
       )}

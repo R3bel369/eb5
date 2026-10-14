@@ -280,7 +280,6 @@ function LeadList() {
         <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px;">${l.verified_email || '—'}</td>
         <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px;">${l.verified_phone || '—'}</td>
         <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px;">${l.country_of_residence || '—'}</td>
-        <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px;"><span style="background-color: #eef2f9; color: #1e4589; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${statusLabel(l.lead_status)}</span></td>
         <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: center; font-weight: bold; color: #d49a16;">${l.engagement_score ?? 60}</td>
         <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px;">${l.investment_timeframe || '—'}</td>
         <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px;">${l.assigned_advisor || 'Unassigned'}</td>
@@ -341,7 +340,6 @@ function LeadList() {
               <th>Email</th>
               <th>Phone</th>
               <th>Country</th>
-              <th>Status</th>
               <th>Score</th>
               <th>Timeframe</th>
               <th>Advisor</th>
@@ -446,29 +444,18 @@ function LeadList() {
       </div>
 
       {/* Filters */}
-      <div className="card py-3.5 px-4 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="card py-3.5 px-4 flex items-center">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-400" />
           <input
             id="lead-search"
             type="search"
-            placeholder="Search by name, email, country, phone…"
+            placeholder="Search by investor name, email, country, phone…"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0) }}
-            className="input-field pl-9 text-xs py-2"
+            className="input-field pl-9 text-xs py-2 w-full"
           />
         </div>
-        <select
-          id="lead-status-filter"
-          value={statusFilter}
-          onChange={e => { setFilter(e.target.value); setPage(0) }}
-          className="input-field w-auto text-xs py-2 cursor-pointer"
-        >
-          <option value="">All Statuses</option>
-          {LEAD_STATUSES.map(s => (
-            <option key={s} value={s}>{statusLabel(s)}</option>
-          ))}
-        </select>
       </div>
 
       {/* Lead Table */}
@@ -477,10 +464,9 @@ function LeadList() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200 text-left">
               <tr>
-                <th className="py-3 px-4 font-semibold text-navy-700 text-xs">Investor Name</th>
+                <th className="py-3 px-4 font-semibold text-navy-700 text-xs">Investor</th>
                 <th className="py-3 px-4 font-semibold text-navy-700 text-xs">Contact Details</th>
                 <th className="py-3 px-4 font-semibold text-navy-700 text-xs">Country</th>
-                <th className="py-3 px-4 font-semibold text-navy-700 text-xs">Status</th>
                 <th className="py-3 px-4 font-semibold text-navy-700 text-xs text-center">Score</th>
                 <th className="py-3 px-4 font-semibold text-navy-700 text-xs">Advisor</th>
                 <th className="py-3 px-4 font-semibold text-navy-700 text-xs">Created</th>
@@ -490,13 +476,13 @@ function LeadList() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-navy-400">
+                  <td colSpan={7} className="py-12 text-center text-navy-400">
                     Loading leads…
                   </td>
                 </tr>
               ) : paginatedLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-navy-400">
+                  <td colSpan={7} className="py-12 text-center text-navy-400">
                     No leads found matching your criteria.
                   </td>
                 </tr>
@@ -504,14 +490,21 @@ function LeadList() {
                 paginatedLeads.map(lead => (
                   <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
                     <td className="py-3.5 px-4">
-                      <Link to={`/admin/leads/${lead.id}`} className="font-semibold text-navy-900 hover:text-gold-600 block">
-                        {lead.full_name || 'Anonymous Prospect'}
-                      </Link>
-                      {lead.consultation_requested && (
-                        <span className="inline-block mt-0.5 text-[10px] bg-gold-100 text-gold-800 px-1.5 py-0.5 rounded font-medium">
-                          Consultation Requested
-                        </span>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full bg-navy-900 text-gold-400 font-bold flex items-center justify-center text-sm ring-2 ring-gold-400/50 flex-shrink-0 shadow-xs">
+                          {(lead.full_name || 'A')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <Link to={`/admin/leads/${lead.id}`} className="font-semibold text-navy-900 hover:text-gold-600 block">
+                            {lead.full_name || 'Anonymous Prospect'}
+                          </Link>
+                          {lead.consultation_requested && (
+                            <span className="inline-block mt-0.5 text-[10px] bg-gold-100 text-gold-800 px-1.5 py-0.5 rounded font-medium">
+                              Consultation Requested
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 text-xs">
                       <div className="text-navy-800 truncate max-w-[180px]">{lead.verified_email || '—'}</div>
@@ -519,11 +512,6 @@ function LeadList() {
                     </td>
                     <td className="py-3.5 px-4 text-xs text-navy-600">
                       {lead.country_of_residence || '—'}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${statusVariant(lead.lead_status)}`}>
-                        {statusLabel(lead.lead_status)}
-                      </span>
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${scoreColor(lead.engagement_score ?? 60)}`}>
