@@ -26,6 +26,19 @@
   input, textarea, select {
     @apply outline-none;
   }
+
+  /* Hide Firebase/Google reCAPTCHA elements — invisible reCAPTCHA only needs a DOM node */
+  #recaptcha-container,
+  .grecaptcha-badge {
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 }
 
 /* ── Component utilities ──────────────────────────────────────────── */

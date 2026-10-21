@@ -78,6 +78,13 @@ export function getOrCreateRecaptchaVerifier(containerId = 'recaptcha-container'
     if (!container) {
       container = document.createElement('div')
       container.id = containerId
+      // Hide off-screen — Firebase only needs a DOM node, not a visible element
+      container.style.position = 'absolute'
+      container.style.left = '-9999px'
+      container.style.top = '-9999px'
+      container.style.width = '0'
+      container.style.height = '0'
+      container.style.overflow = 'hidden'
       document.body.appendChild(container)
     }
   }
