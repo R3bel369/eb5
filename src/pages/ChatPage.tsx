@@ -300,14 +300,15 @@ export function ChatPage() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center justify-between mt-2.5 pt-1.5 border-t border-navy-100">
             <p className="text-navy-400 text-xs">Press Enter to send • Shift+Enter for new line</p>
             <button
               id="request-consultation-btn"
               onClick={openConsultation}
-              className="text-xs text-gold-600 hover:text-gold-700 font-medium transition-colors"
+              className="flex items-center gap-1.5 text-xs font-bold text-gold-700 hover:text-gold-900 bg-gold-50 hover:bg-gold-100 border border-gold-300 px-3 py-1 rounded-lg transition-colors shadow-2xs"
             >
-              Request Consultation →
+              <Calendar className="w-3.5 h-3.5 text-gold-600" />
+              <span>Book Consultation →</span>
             </button>
           </div>
         </div>

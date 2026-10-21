@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { UserCheck, Mail, Phone, User, ArrowRight, ShieldCheck, ChevronDown } from 'lucide-react'
+import { UserCheck, Mail, Phone, User, ArrowRight, ShieldCheck, ChevronDown, Calendar } from 'lucide-react'
+import { useChat } from '../../contexts/ChatContext'
 import { isValidEmail } from '../../lib/utils'
 import toast from 'react-hot-toast'
 
@@ -19,6 +20,7 @@ const COUNTRY_CODES = [
 ]
 
 export function LeadOnboardingCard({ onSubmit, onSkip }: LeadOnboardingCardProps) {
+  const { openConsultation } = useChat()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [countryCode, setCountryCode] = useState('+91')
@@ -213,6 +215,18 @@ export function LeadOnboardingCard({ onSubmit, onSkip }: LeadOnboardingCardProps
             <ShieldCheck className="w-3.5 h-3.5 text-gold-400" />
             <span>Send SMS Code</span>
             <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Direct Book Consultation Option */}
+        <div className="pt-2.5 border-t border-navy-100/70 text-center">
+          <button
+            type="button"
+            onClick={openConsultation}
+            className="text-[11px] font-semibold text-gold-700 hover:text-gold-950 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Calendar className="w-3.5 h-3.5 text-gold-600" />
+            <span>Prefer to schedule a meeting? Book a Consultation directly →</span>
           </button>
         </div>
       </form>

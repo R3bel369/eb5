@@ -282,9 +282,16 @@ export function WidgetChatPage() {
             <Send className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="flex items-center justify-between text-[9px] text-navy-400 mt-1.5 px-1">
-          <span>Powered by Shoora EB-5 AI</span>
-          <span>Press Enter to send</span>
+        <div className="flex items-center justify-between text-[10px] mt-1.5 px-0.5">
+          <span className="text-[9px] text-navy-400">Powered by Shoora EB-5 AI</span>
+          <button
+            type="button"
+            onClick={openConsultation}
+            className="flex items-center gap-1 text-[10px] font-bold text-gold-700 hover:text-gold-950 bg-gold-50 hover:bg-gold-100 border border-gold-300 px-2 py-0.5 rounded-md transition-all shadow-2xs cursor-pointer"
+          >
+            <Calendar className="w-3 h-3 text-gold-600" />
+            <span>Book Consultation →</span>
+          </button>
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { ShieldCheck, Phone, ArrowRight, RefreshCw, Edit3, KeyRound, CheckCircle2, MessageSquare } from 'lucide-react'
+import { ShieldCheck, Phone, ArrowRight, RefreshCw, Edit3, KeyRound, CheckCircle2, MessageSquare, Calendar } from 'lucide-react'
+import { useChat } from '../../contexts/ChatContext'
 import toast from 'react-hot-toast'
 
 interface ChatOtpVerificationCardProps {
@@ -19,6 +20,7 @@ export function ChatOtpVerificationCard({
   onResend,
   onChangePhone,
 }: ChatOtpVerificationCardProps) {
+  const { openConsultation } = useChat()
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', ''])
   const [submitting, setSubmitting] = useState(false)
   const [resending, setResending] = useState(false)
@@ -251,6 +253,17 @@ export function ChatOtpVerificationCard({
           <p className="text-[10px] text-navy-400 text-center mt-3">
             Tip: You can also type your 6-digit code directly into the chat box below.
           </p>
+
+          <div className="text-center mt-3 pt-2.5 border-t border-navy-100">
+            <button
+              type="button"
+              onClick={openConsultation}
+              className="text-xs font-semibold text-gold-700 hover:text-gold-950 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Calendar className="w-3.5 h-3.5 text-gold-600" />
+              <span>Or Book a 1-on-1 Consultation directly →</span>
+            </button>
+          </div>
         </>
       )}
     </div>
