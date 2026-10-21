@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import {
   Send, Loader2, MessageSquare, RefreshCw, LogIn,
-  ExternalLink, User, Bot, ChevronRight, Lock, ShieldCheck
+  ExternalLink, User, Bot, ChevronRight, Lock, ShieldCheck, Calendar
 } from 'lucide-react'
 import { useChat } from '../contexts/ChatContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -90,6 +90,9 @@ export function ChatPage() {
     loading,
     onboardingStep,
     otpState,
+    isConsultationOpen,
+    openConsultation,
+    closeConsultation,
     sendMessage,
     submitOnboardingDetails,
     verifyOtpCode,
@@ -101,7 +104,6 @@ export function ChatPage() {
   const { user, isAdmin, signOut } = useAuth()
   const [avatarSettings, setAvatarSettings] = useState<AvatarSettings>(getAvatarSettings())
   const [input, setInput] = useState('')
-  const [showConsultation, setShowConsultation] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [searchParams] = useSearchParams()
@@ -166,6 +168,16 @@ export function ChatPage() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            id="header-book-consultation-btn"
+            onClick={openConsultation}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold-100 hover:bg-gold-200 text-gold-900 border border-gold-300 text-xs font-semibold shadow-xs transition-colors"
+            title="Book a private 1-on-1 consultation"
+          >
+            <Calendar className="w-3.5 h-3.5 text-gold-700" />
+            <span>Book Consultation</span>
+          </button>
+
           <button
             id="new-conversation-btn"
             onClick={startNewConversation}
@@ -292,7 +304,7 @@ export function ChatPage() {
             <p className="text-navy-400 text-xs">Press Enter to send • Shift+Enter for new line</p>
             <button
               id="request-consultation-btn"
-              onClick={() => setShowConsultation(true)}
+              onClick={openConsultation}
               className="text-xs text-gold-600 hover:text-gold-700 font-medium transition-colors"
             >
               Request Consultation →
@@ -302,8 +314,8 @@ export function ChatPage() {
       </div>
 
       {/* Consultation modal */}
-      {showConsultation && (
-        <ConsultationForm onClose={() => setShowConsultation(false)} />
+      {isConsultationOpen && (
+        <ConsultationForm onClose={closeConsultation} />
       )}
     </div>
   )

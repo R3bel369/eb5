@@ -86,6 +86,11 @@ export interface Lead {
   lead_status: LeadStatus
   engagement_score: number
   consultation_requested: boolean
+  consultation_date?: string | null
+  consultation_time?: string | null
+  consultation_mode?: string | null
+  consultation_topic?: string | null
+  booking_id?: string | null
   follow_up_consent: boolean
   marketing_email_consent: boolean
   marketing_sms_consent: boolean

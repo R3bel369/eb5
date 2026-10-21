@@ -28,6 +28,9 @@ interface ChatContextValue {
     isResending: boolean
     otpHint: string | null
   }
+  isConsultationOpen: boolean
+  openConsultation: () => void
+  closeConsultation: () => void
   sendMessage: (content: string) => Promise<void>
   submitOnboardingDetails: (details: { name: string; email: string; phone?: string }) => Promise<void>
   verifyOtpCode: (code: string) => Promise<boolean>
@@ -107,6 +110,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     isResending: false,
     otpHint: null,
   })
+  const [isConsultationOpen, setIsConsultationOpen] = useState(false)
+  const openConsultation = useCallback(() => setIsConsultationOpen(true), [])
+  const closeConsultation = useCallback(() => setIsConsultationOpen(false), [])
   const abortRef = useRef<AbortController | null>(null)
   const currentLeadIdRef = useRef<string>(`lead-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`)
 
@@ -569,52 +575,61 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             if (extractedPhone) setCollectedData((p) => ({ ...p, phone: extractedPhone }))
           }
 
-          const kbMatch = findKnowledgeBaseReply(trimmed)
+          // Check for consultation booking intent
+          const isConsultationIntent = /(book|schedule|request|reserve|set\s*up).*(consultation|call|appointment|meeting|advisor)|(talk|speak)\s*(to|with)\s*(an?\s*)?(advisor|specialist|human|expert)|(consultation\s*booking)/i.test(trimmed)
 
-          if (kbMatch) {
-            assistantReply = kbMatch.reply
-            sources = [kbMatch.matchedItem.category, 'Shoora Knowledge Base']
+          if (isConsultationIntent) {
+            setIsConsultationOpen(true)
+            assistantReply = `I would be delighted to schedule a 1-on-1 confidential consultation for you with our Senior EB-5 Advisory Desk!\n\nI have opened the **Consultation Reservation Form** on your screen. You can select your preferred meeting date, time slot, and mode (Google Meet / Zoom Video Call, Direct Phone, or WhatsApp).\n\nIf the form was minimized, simply click the **📅 Book Consultation** button at any time.`
+            sources = ['Shoora EB-5 Advisory Desk', 'Elena Vance']
           } else {
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-            const isConfiguredUrl = supabaseUrl && !supabaseUrl.includes('placeholder')
+            const kbMatch = findKnowledgeBaseReply(trimmed)
 
-            if (isConfiguredUrl) {
-              try {
-                const {
-                  data: { session },
-                } = await supabase.auth.getSession()
-                const history = messages
-                  .filter((m) => m.id !== 'welcome')
-                  .map((m) => ({ role: m.role, content: m.content }))
+            if (kbMatch) {
+              assistantReply = kbMatch.reply
+              sources = [kbMatch.matchedItem.category, 'Shoora Knowledge Base']
+            } else {
+              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+              const isConfiguredUrl = supabaseUrl && !supabaseUrl.includes('placeholder')
 
-                const response = await fetch(`${supabaseUrl}/functions/v1/chat`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                  },
-                  body: JSON.stringify({
-                    message: trimmed,
-                    history,
-                    systemPrompt: SYSTEM_PROMPT,
-                    collectedData,
-                  }),
-                  signal: abortRef.current.signal,
-                })
+              if (isConfiguredUrl) {
+                try {
+                  const {
+                    data: { session },
+                  } = await supabase.auth.getSession()
+                  const history = messages
+                    .filter((m) => m.id !== 'welcome')
+                    .map((m) => ({ role: m.role, content: m.content }))
 
-                if (response.ok) {
-                  const result = await response.json()
-                  assistantReply = result.message || result.choices?.[0]?.message?.content || ''
-                  if (result.sources) sources = result.sources
+                  const response = await fetch(`${supabaseUrl}/functions/v1/chat`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                    },
+                    body: JSON.stringify({
+                      message: trimmed,
+                      history,
+                      systemPrompt: SYSTEM_PROMPT,
+                      collectedData,
+                    }),
+                    signal: abortRef.current.signal,
+                  })
+
+                  if (response.ok) {
+                    const result = await response.json()
+                    assistantReply = result.message || result.choices?.[0]?.message?.content || ''
+                    if (result.sources) sources = result.sources
+                  }
+                } catch (fetchErr) {
+                  console.warn('AI edge function unavailable:', fetchErr)
                 }
-              } catch (fetchErr) {
-                console.warn('AI edge function unavailable:', fetchErr)
               }
-            }
 
-            if (!assistantReply) {
-              assistantReply = `Thank you for your inquiry with **Shoora EB-5**!\n\nHere are key fundamentals under the EB-5 Reform and Integrity Act of 2022 (RIA):\n• **Capital Requirement**: **$800,000** for Targeted Employment Areas (TEA — Rural or High Unemployment) and **$1,050,000** for non-TEA projects.\n• **Job Creation**: Minimum 10 full-time U.S. jobs per investor (indirect and induced jobs qualify in Regional Center projects).\n• **Rural Priority Processing**: Rural TEA projects receive statutory priority processing (averaging 6–12 months).\n• **Concurrent Filing**: Investors in the U.S. on H-1B, L-1, or F-1 OPT can file Form I-485 simultaneously and receive an open EAD work permit in 60–180 days.\n• **Full Family Inclusion**: Includes your spouse and all unmarried children under 21 under a single $800,000 investment.\n\nWould you like to discuss your specific source of funds, timeline, or schedule a confidential advisory session with our team?`
-              sources = ['USCIS EB-5 Guidelines', 'Shoora EB-5 Advisory Desk']
+              if (!assistantReply) {
+                assistantReply = `Thank you for your inquiry with **Shoora EB-5**!\n\nHere are key fundamentals under the EB-5 Reform and Integrity Act of 2022 (RIA):\n• **Capital Requirement**: **$800,000** for Targeted Employment Areas (TEA — Rural or High Unemployment) and **$1,050,000** for non-TEA projects.\n• **Job Creation**: Minimum 10 full-time U.S. jobs per investor (indirect and induced jobs qualify in Regional Center projects).\n• **Rural Priority Processing**: Rural TEA projects receive statutory priority processing (averaging 6–12 months).\n• **Concurrent Filing**: Investors in the U.S. on H-1B, L-1, or F-1 OPT can file Form I-485 simultaneously and receive an open EAD work permit in 60–180 days.\n• **Full Family Inclusion**: Includes your spouse and all unmarried children under 21 under a single $800,000 investment.\n\nWould you like to discuss your specific source of funds, timeline, or schedule a confidential advisory session with our team?`
+                sources = ['USCIS EB-5 Guidelines', 'Shoora EB-5 Advisory Desk']
+              }
             }
           }
         }
@@ -680,6 +695,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         collectedData,
         onboardingStep,
         otpState,
+        isConsultationOpen,
+        openConsultation,
+        closeConsultation,
         sendMessage,
         submitOnboardingDetails,
         verifyOtpCode,

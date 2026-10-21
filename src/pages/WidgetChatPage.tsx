@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   Send, RefreshCw, X, Minus, ExternalLink, Bot, User,
-  CheckCircle2, Sparkles, Shield, Lock, ShieldCheck
+  CheckCircle2, Sparkles, Shield, Lock, ShieldCheck, Calendar
 } from 'lucide-react'
 import { useChat } from '../contexts/ChatContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -10,6 +10,7 @@ import { getAvatarSettings, type AvatarSettings } from '../lib/avatarConfig'
 import { LeadOnboardingCard } from '../components/chat/LeadOnboardingCard'
 import { QuestionInsightsBar } from '../components/chat/QuestionInsightsBar'
 import { ChatOtpVerificationCard } from '../components/chat/ChatOtpVerificationCard'
+import { ConsultationForm } from '../components/chat/ConsultationForm'
 import { cn, formatDateTime } from '../lib/utils'
 import type { ChatMessage } from '../types/database'
 
@@ -69,6 +70,9 @@ export function WidgetChatPage() {
     loading,
     onboardingStep,
     otpState,
+    isConsultationOpen,
+    openConsultation,
+    closeConsultation,
     sendMessage,
     submitOnboardingDetails,
     verifyOtpCode,
@@ -146,6 +150,14 @@ export function WidgetChatPage() {
         </div>
 
         <div className="flex items-center gap-1">
+          <button
+            onClick={openConsultation}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 border border-gold-400/40 text-[10px] font-semibold transition-all shadow-xs mr-0.5"
+            title="Book a confidential consultation with Elena Vance"
+          >
+            <Calendar className="w-3 h-3 text-gold-400" />
+            <span>Book Call</span>
+          </button>
           {isAdmin ? (
             <a
               href={`${typeof window !== 'undefined' ? window.location.origin : ''}/admin`}
@@ -192,11 +204,19 @@ export function WidgetChatPage() {
       </header>
 
       {/* Trust & Educational Notice */}
-      <div className="bg-gold-50 border-b border-gold-200/70 px-3 py-1.5 text-center flex-shrink-0">
-        <p className="text-gold-800 text-[10px] flex items-center justify-center gap-1">
+      <div className="bg-gold-50 border-b border-gold-200/70 px-3 py-1.5 flex items-center justify-between text-center flex-shrink-0">
+        <p className="text-gold-800 text-[10px] flex items-center gap-1 truncate">
           <Shield className="w-3 h-3 text-gold-600 flex-shrink-0" />
-          Educational EB-5 Information • Reform and Integrity Act (RIA 2022)
+          Educational EB-5 Guidance • RIA 2022
         </p>
+        <button
+          onClick={openConsultation}
+          type="button"
+          className="text-gold-900 hover:text-navy-950 font-bold text-[10px] flex items-center gap-0.5 ml-2 flex-shrink-0 hover:underline"
+        >
+          <span>📅 Book Advisor</span>
+          <span className="text-[9px]">→</span>
+        </button>
       </div>
 
       {/* Messages Scroll Area */}
@@ -267,6 +287,11 @@ export function WidgetChatPage() {
           <span>Press Enter to send</span>
         </div>
       </div>
+
+      {/* 1-on-1 Consultation Booking Modal */}
+      {isConsultationOpen && (
+        <ConsultationForm onClose={closeConsultation} />
+      )}
     </div>
   )
 }

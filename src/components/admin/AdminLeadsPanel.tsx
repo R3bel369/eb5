@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   Search, Download, RefreshCw, ChevronDown, Edit3, X,
-  FileSpreadsheet, FileText, CheckCircle, Clock, Eye, Printer
+  FileSpreadsheet, FileText, CheckCircle, Clock, Eye, Printer, Calendar
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import {
@@ -499,9 +499,16 @@ function LeadList() {
                             {lead.full_name || 'Anonymous Prospect'}
                           </Link>
                           {lead.consultation_requested && (
-                            <span className="inline-block mt-0.5 text-[10px] bg-gold-100 text-gold-800 px-1.5 py-0.5 rounded font-medium">
-                              Consultation Requested
-                            </span>
+                            <div className="mt-0.5 space-y-0.5">
+                              <span className="inline-block text-[10px] bg-gold-100 text-gold-900 border border-gold-300 px-1.5 py-0.2 rounded font-medium">
+                                📅 {lead.consultation_date ? `Consultation: ${lead.consultation_date}` : 'Consultation Requested'}
+                              </span>
+                              {lead.consultation_mode && (
+                                <span className="block text-[9px] text-navy-500 capitalize">
+                                  Mode: {lead.consultation_mode} {lead.booking_id ? `(${lead.booking_id})` : ''}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -716,6 +723,42 @@ function LeadDetail() {
               <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs">
                 <span className="font-semibold text-navy-800 block mb-1">Source of Funds Information:</span>
                 <p className="text-navy-600">{lead.source_of_funds}</p>
+              </div>
+            )}
+
+            {(lead.consultation_requested || lead.consultation_date) && (
+              <div className="mt-4 p-4 rounded-xl bg-gold-50/70 border border-gold-300 text-xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gold-950 flex items-center gap-1.5 text-xs">
+                    <Calendar className="w-4 h-4 text-gold-600" />
+                    Consultation Booking Reservation
+                  </span>
+                  {lead.booking_id && (
+                    <span className="font-mono bg-gold-200/80 text-gold-900 font-bold px-2 py-0.5 rounded text-[10px]">
+                      {lead.booking_id}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1 text-navy-800 border-t border-gold-200/60">
+                  <div>
+                    <span className="text-navy-500 block text-[10px]">Preferred Date</span>
+                    <span className="font-bold">{lead.consultation_date || 'Requested'}</span>
+                  </div>
+                  <div>
+                    <span className="text-navy-500 block text-[10px]">Time Window</span>
+                    <span className="font-bold">{lead.consultation_time || 'Anytime'}</span>
+                  </div>
+                  <div>
+                    <span className="text-navy-500 block text-[10px]">Meeting Mode</span>
+                    <span className="font-bold capitalize">{lead.consultation_mode || 'Video Call'}</span>
+                  </div>
+                </div>
+                {lead.consultation_topic && (
+                  <div className="pt-1 border-t border-gold-200/60">
+                    <span className="text-navy-500 block text-[10px]">Consultation Topic / Focus</span>
+                    <span className="font-semibold text-navy-900">{lead.consultation_topic}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>

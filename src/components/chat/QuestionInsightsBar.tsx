@@ -11,6 +11,13 @@ export interface QuestionInsight {
 
 export const QUESTION_INSIGHTS: QuestionInsight[] = [
   {
+    id: 'book-consultation-quick',
+    label: '📅 Book 1-on-1 Consultation',
+    question: 'I would like to book a private 1-on-1 consultation with a Shoora EB-5 advisor.',
+    category: 'Advisory',
+    icon: '📅',
+  },
+  {
     id: 'min-inv',
     label: '$800K vs $1.05M',
     question: 'What is the minimum qualifying investment for TEA vs non-TEA under the RIA 2022?',
